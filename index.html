@@ -1,0 +1,289 @@
+<!doctype html>
+<html>
+  <head>
+    <link rel="stylesheet" href="css/chessboard-1.0.0.css" />
+    <link rel="stylesheet" href="css/grade_report.css" />
+    <script src="./js/jquery-3.6.1.js"></script>
+    <script src="./js/chessboard-1.0.0.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./js/submit_pgn.js" type="module"></script>
+   
+    <style>  
+      html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+      .outer{
+           
+        width:100vw;
+        height:100vh;
+      
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-color: black;
+        border-width: thin ;
+
+      }
+
+      .inner{
+        width:calc(100vw - 20px);
+        height:calc(100vh - 20px);
+        min-height:calc(100vh - 20px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 40px;
+        background: #73AD21;
+
+      }
+
+      .hidden{
+        visibility: hidden;
+      }
+      .disp_pannel{
+        
+        width:calc(100vw - 60px);
+        height:calc(100vh - 60px);
+        min-height:calc(100vh - 60px);
+        display:grid;
+        grid-template-columns: min( calc( ( 100vw - 60px ) * 0.3266 ) , calc( ( 66vh - 60px ) * 0.5 ) ) min( calc( ( 100vw - 60px ) * 0.3266 ) , calc( ( 66vh - 60px ) * 0.5 ) )   1fr 1fr  ;
+        grid-template-rows: 10vh min( calc( ( ( 100vw - 60px ) * 0.66 ) - 11vh ), calc(  ( 66vh - 60px )   - 11vh ))  10vh max( calc( 87vh - 60px - ( ( 100vw - 60px ) * 0.66 ) )  ,  calc( 87vh - 60px -   ( 66vh - 60px )   ));
+        gap: 1vh;
+        
+      }
+
+      .highlight_square {
+        box-shadow: inset 0 0 3px 3px blue;
+        
+      }
+      
+      #board{
+        grid-column: 1 / 3 ;
+        grid-row: 1 / 3;
+      
+        max-width: 100%;
+        max-height: 100%;
+        aspect-ratio: 1/1;
+
+      }
+      
+      #graph.L{
+        visibility:visible;
+      }
+      #graph.P{
+
+      }
+      #graph{   
+        position: relative;     
+        grid-column: 3 / 5 ;
+        grid-row: 1 / 2;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow-x:hidden; 
+        overflow-y:hidden;
+        width: calc( 100% - 10px );
+        height: calc( 100% - 10px );
+        max-width: calc( 100% - 10px );
+        max-height: calc( 100% - 10px );
+        padding:5px;
+      }
+      
+      #report.L{ 
+        visibility:visible;
+      }
+      #report.P{ 
+        visibility:visible;
+        grid-column: 3 / 4 ;
+        grid-row: 2 / 3;
+      }
+      
+      #report{ 
+        display:flex;
+        grid-column: 3 / 4 ;
+        grid-row: 2 / 3;      
+        visibility:hidden;
+        cursor: pointer;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      #moves.L{
+        visibility:visible;
+      }
+
+      #moves.P{
+        grid-column: 2 / 3 ;
+        grid-row: 3 / 5;
+        visibility:visible;
+      }
+      #moves{ 
+        grid-column: 4 / 5 ;
+        grid-row: 2 / 3;
+        display:flex;      
+        visibility:hidden;
+        cursor: pointer;
+      }
+
+      #book{ 
+        display:flex;      
+        grid-column: 1 / 2 ;
+        grid-row: 3 / 5;
+        cursor: pointer;
+      }
+      
+    
+
+      canvas#eval_graph{
+        height:100%;
+        width:100%;
+      }
+
+      .report_value {
+      }
+
+      .report_centre_title{
+        text-align: center;
+      }
+      .report_title{
+        text-align: center;
+      }
+
+      span.chess_position span.number{
+        font-weight:bolder;
+      }
+
+      span.chess_position span.move{
+        font-weight:bold;
+      }
+      
+      
+
+      .pannel {
+        border-radius: 20px;
+        background: rgb(192, 212, 183);
+        overflow-x:hidden; 
+        overflow-y:auto;
+        width: calc( 100% - 40px );
+        height: calc( 100% - 40px );
+        max-width: calc( 100% - 40px );
+        max-height: calc( 100% - 40px );
+        padding:20px;
+      }
+
+      .chessGameHTML{
+      }
+
+      .chessGameControls{
+        display: flex;
+      }
+      
+      .button{
+        border-radius: 3%;
+        background: rgb(91, 100, 87);
+        padding: 4%;
+        width:20%;
+        margin:2pt;
+        text-align: center;
+      }
+
+.Brillient{
+  --grade_color:blueviolet;
+}
+.Mistake{
+  --grade_color: rgb(214, 82, 21);
+}
+.Exellent{
+  --grade_color: rgb(0, 204, 255);
+}
+.Great{
+  --grade_color: rgb(14, 190, 138);
+}
+.Best{
+  --grade_color: rgba(0,0,0,0.0);
+}
+
+.Good{
+  --grade_color:  rgba(0,0,0,0.0);
+}
+.OK{
+  --grade_color: rgba(0,0,0,0.0);
+}
+.Inaccuracy{
+  --grade_color: rgb(255, 174, 0);
+}
+.Blunder{
+  --grade_color: rgb(255, 0, 0);
+}
+.Book{
+  --grade_color: rgba(0,0,0,0.0);
+}
+span.chess_position span.move{
+  background: var(--grade_color);
+}
+
+td.report_value{
+  color: darkgreen;
+}
+
+td.report_centre_title{
+  background: var(--grade_color);
+}
+
+span.chess_position span.move.selected{
+  border: 2px solid white;
+}
+
+    </style>
+  </head>
+  <body>
+
+</script>
+    <script>
+
+      
+      function get(name){
+        if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+        return decodeURIComponent(name[1]);
+      }
+      var key    = get("key")
+    </script>
+
+    <div class='outer'>
+      <div class="inner">
+      <div id="top_display" class="disp_pannel">
+        <div id="graph" class="pannel"></div>
+        <div id="board" ></div></td>
+        <div id="report" class="pannel"></div></td>
+        <div id="moves" class="pannel"></div>
+        <div id="book" class="pannel"></div></div>
+      </div>
+    </div>
+    </div>
+
+    <script>
+      function windowFormat(evt){
+        if (window.innerHeight > window.innerWidth)
+        {
+          $(".pannel").removeClass("L")
+          $(".pannel").addClass("P")
+        }
+        else
+        {
+          $(".pannel").removeClass("P")
+          $(".pannel").addClass("L")
+        }
+      }
+
+      windowFormat(null);
+      $(window).resize(windowFormat)
+    </script>
+  </body>
+</html>
+

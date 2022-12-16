@@ -1,0 +1,27 @@
+.grade_report_clickable{
+    color: antiquewhite;
+}
+.grade_report_clickable.Brillient{
+    background-color: blueviolet;
+}
+.grade_report_clickable.Exellent{
+    background-color: rgb(43, 189, 226);
+}
+.grade_report_clickable.Good{
+    background-color: rgb(125, 226, 43);
+}
+.grade_report_clickable.Inaccuracy{
+    background-color: rgb(226, 198, 43);
+}
+.grade_report_clickable.Mistake{
+    background-color: rgb(226, 162, 43);
+}
+.grade_report_clickable.Blunder{
+    background-color: rgb(226, 43, 43);
+}
+.grade_report_clickable.Book{
+    background-color: rgb(128, 128, 128);
+}
+.grade_report_clickable.grade_report_clicked{
+    font-weight: bolder;
+}
