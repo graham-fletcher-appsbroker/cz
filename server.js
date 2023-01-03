@@ -165,7 +165,7 @@ function createServer(cb)
 {
     return require("http").createServer(cb);
 }
-createServer(serve).listen( port, function onopen()
+createServer(serve).listen( port, '0.0.0.0', function onopen()
 {
     console.log("Listening to http://127.0.0.1:" + port);
 });

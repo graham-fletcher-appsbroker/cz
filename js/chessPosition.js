@@ -147,6 +147,7 @@ export class chessPosition extends ObjectEvent {
     }
 
     grade_move = () => {
+        console.log("grade")
 
         if (this.grade!="Book" && this.parent && this.parent.full_eva && this.parent.short_eva) {
             var count = 0;
@@ -161,10 +162,12 @@ export class chessPosition extends ObjectEvent {
 
             var old_grade = this.grade
 
-            var grades_by_analysis = [      ["OK","Best","Great","Exellent","Brillient"]  ,               //Best move acoring to full analysis,
-                                            ["Good","Good","OK","OK","OK"],                             //<0.05 drop according to full analysis
-                                            ["Inaccuracy","Inaccuracy","Inaccuracy","Inaccuracy","Good"],    //<0.10 drop according to full analysis
-                                            ["Mistake","Mistake","Mistake","Mistake","Inaccuracy"],  //<0.20 drop according to full analysis
+            var grades_by_analysis = [      ["Exellent","Exellent","Brillient","Brillient","Brillient"]  ,               //MOves that imporve the analysis a lot,
+                                            ["Great","Great","Exellent","Brillient","Brillient"]  ,               //MOves that imporve the analysis,
+                                            ["OK","Best","Great","Exellent","Brillient"]  ,               //Best move acoring to full analysis,
+                                            ["Inaccuracy","OK","Good","Good","Good"],                             //<0.05 drop according to full analysis
+                                            ["Mistake","Inaccuracy","Inaccuracy","Inaccuracy","OK"],    //<0.10 drop according to full analysis
+                                            ["Blunder","Mistake","Mistake","Mistake","Inaccuracy"],  //<0.20 drop according to full analysis
                                             ["Blunder","Blunder","Blunder","Blunder","Mistake"]]
 
         
@@ -181,29 +184,40 @@ export class chessPosition extends ObjectEvent {
 
             //Identify which line of grading based on the full analysis delta
             var grades_array 
-            if (this.moveA == this.parent.best_full_move ){
+            if (full_eval_diff > 0.6){
                 grades_array = grades_by_analysis[0]
-            } else if (full_eval_diff > -0.05){
+            } else if (full_eval_diff > 0.03){
                 grades_array = grades_by_analysis[1]
-            } else if (full_eval_diff > -0.1) {
+            } else if (this.moveA == this.parent.best_full_move ){
                 grades_array = grades_by_analysis[2]
-            } else if (full_eval_diff > -0.2) {
+            } else if (full_eval_diff > -0.05){
                 grades_array = grades_by_analysis[3]
-            } else {
+            } else if (full_eval_diff > -0.1) {
                 grades_array = grades_by_analysis[4]
+            } else if (full_eval_diff > -0.2) {
+                grades_array = grades_by_analysis[5]
+            } else {
+                grades_array = grades_by_analysis[6]
             }
             
             //Identify the grading based difficulty
             this.grade = grades_array[4]
-            if (difficulty < 0.95) this.grade = grades_array[3] 
-            if (difficulty < 0.9) this.grade = grades_array[2] 
-            if (difficulty < 0.8) this.grade = grades_array[1] 
-            if (difficulty < 0.1) this.grade = grades_array[0] 
-            
+            if (difficulty < 0.85) this.grade = grades_array[3] 
+            if (difficulty < 0.75) this.grade = grades_array[2] 
+            if (difficulty < 0.55) this.grade = grades_array[1] 
+            if (difficulty < 0.10) {
+                this.grade = grades_array[0] 
+            }
             if(old_grade != this.grade)
             {
                 this.throw("grade_changed",this)
+                
             }
+
+            console.log("------------------")
+                console.log(this.moveA)
+                console.log(difficulty)
+                console.log(full_eval_diff)
         }
     }
 /*

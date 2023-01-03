@@ -1,7 +1,7 @@
 [
   {
     "origin": ["*"],
-    "responseHeader": ["Content-Type","Cross-Origin-Embedder-Policy","Cross-Origin-Opener-Policy"],
+    "responseHeader": ["Content-Type","Cross-Origin-Embedder-Policy: Cross-Origin-Opener-Policy"],
     "method": ["GET"],
     "maxAgeSeconds": 3600
   }

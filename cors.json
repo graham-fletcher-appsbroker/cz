@@ -1,0 +1,6 @@
+[
+    {
+      "method": ["GET"],
+      "responseHeader": {"Content-Type":"*","Cross-Origin-Embedder-Policy":"require-corp", "Cross-Origin-Opener-Policy":"same-origin"}
+    }
+]

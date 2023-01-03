@@ -11,8 +11,8 @@ export class chessGame extends ObjectEvent{
         this.new_event("analysis_update")
         this.new_event("analysis_complete")
         this.new_event("move_selected")
-        this.short_eva_depth = 9
-        this.full_eva_depth  = 16
+        //this.short_eva_depth = 9
+        this.full_eva_depth  = 32
         this.id=md5(PGN)
         
         var ch = new Chess()
@@ -82,6 +82,7 @@ export class chessGame extends ObjectEvent{
         }
         if (depth >0)
         {
+            this.engine.postMessage("setoption name Clear Hash");
             this.engine.postMessage("position fen " + this.anal_pos.fen);
             this.engine.postMessage("go depth "+String(depth));
         }
@@ -104,7 +105,8 @@ export class chessGame extends ObjectEvent{
             counts[gr]=new Array(2).fill(0)
         
         for (var m of this.main_line)
-            counts[m.grade][m.turn=="w"?0:1]+= 1    
+            if (m.parent != null)   //Donet count info on the starting position
+                counts[m.grade][m.turn=="w"?0:1]+= 1    
         
            
         //Build the report
@@ -230,7 +232,6 @@ export class chessGame extends ObjectEvent{
         } else {
             line = event;
         }
-
         /// Is it sending feed back with a score?
         if(match = line.match(/^info depth (\d+).*\bscore (\w+) (-?\d+).*\bpv (\w+)/)) {
             var score = parseInt(match[3]) * (this.anal_pos.turn == 'w' ? 1 : -1);
@@ -251,14 +252,15 @@ export class chessGame extends ObjectEvent{
             {
                 this.anal_pos.full_eva=score
                 this.anal_pos.best_full_move=match[4]
-                this.anal_pos.grade_move()
-                for (var next_move of this.anal_pos.nextPositions)
-                    next_move.grade_move()
+               
             }
         }
     
         /// is the analysis done
         if(match = line.match(/^bestmove .*?/)) {
+            this.anal_pos.grade_move()
+            for (var next_move of this.anal_pos.nextPositions)
+                next_move.grade_move()
             this.throw("analysis_update", this.anal_pos )
             if (this.anal_pos.previous())
             {
