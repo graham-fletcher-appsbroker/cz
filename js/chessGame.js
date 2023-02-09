@@ -1,9 +1,9 @@
 import {Chess} from "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.js";
 import {ObjectEvent} from "./objectEvent.js"
-import {chessPosition} from "./chessPosition.js"
+import {chessPosition, p} from "./chessPosition.js"
 import {md5} from "./md5.min.js"
-import { M } from "./chart/dist/chunks/helpers.segment.js";
-
+import { M, P } from "./chart/dist/chunks/helpers.segment.js";
+import {chessEngine,analysis} from "./chessEngine.js"
 
 export class chessGame extends ObjectEvent{
     constructor(PGN){
@@ -11,8 +11,9 @@ export class chessGame extends ObjectEvent{
         this.new_event("analysis_update")
         this.new_event("analysis_complete")
         this.new_event("move_selected")
+        this.en = new chessEngine()
         //this.short_eva_depth = 9
-        this.full_eva_depth  = 32
+        this.full_eva_depth  = 18
         this.id=md5(PGN)
         
         var ch = new Chess()
@@ -27,11 +28,13 @@ export class chessGame extends ObjectEvent{
         var d = true
         while(d)
         {
-            this.positions= [new chessPosition(
+            var np = new chessPosition(
                 ch,
                 this.positions,
                 this
-            )]
+            )
+            np.on("eval_changed", ()=>{this.throw("analysis_update")})
+            this.positions= [np]
             if (ch.history().length==0)
                 d = false
             else
@@ -62,39 +65,9 @@ export class chessGame extends ObjectEvent{
         return p
     }
 
-    analyse = (anal_pos = null) =>{
-
-        if (!this.engine){
-            this.engine = new Worker('stockfish.js');
-            this.engine.onmessage = this.engine_message
-        }
-
-        this.anal_pos = (anal_pos ? anal_pos : this.last())
-        
-        
-        var depth = 0
-        if (this.anal_pos.grade != "Book")
-        {
-            if (!this.anal_pos.short_eva)
-                depth = this.short_eva_depth
-            if (!this.anal_pos.full_eva)
-                depth = this.full_eva_depth
-        }
-        if (depth >0)
-        {
-            this.engine.postMessage("setoption name Clear Hash");
-            this.engine.postMessage("position fen " + this.anal_pos.fen);
-            this.engine.postMessage("go depth "+String(depth));
-        }
-        else
-        {
-            if (this.anal_pos.previous())
-                this.analyse(this.anal_pos.previous())
-            else{
-                this.engine.terminate()
-                this.engine=null
-            }
-        }
+    analyse = () =>{
+        for (var p of this.main_line)
+            p.analyse(this.full_eva_depth,this.en)    
     }
 
     report = (div_id=null) =>{

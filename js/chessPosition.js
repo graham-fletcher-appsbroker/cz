@@ -1,7 +1,7 @@
 import {Chess} from "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.js";
 import {ObjectEvent} from "./objectEvent.js"
 import {md5} from "./md5.min.js"
-
+import {chessEngine,analysis} from "./chessEngine.js"
 export function p(score){
     return 1.0/(1.0+Math.exp(-0.004*score))
 }
@@ -10,10 +10,21 @@ export function q(p) {
     return Math.log((1-p)/p) / (-0.004)
 }
 
-
+const eval_db_request = window.indexedDB.open("eval_db", 1);
+eval_db_request.onerror = (event) => {
+    chessPosition.eval_db = null
+};
+eval_db_request.onsuccess = (event) => {
+    chessPosition.eval_db = event.target.result;
+};
+eval_db_request.onupgradeneeded = (event) => {
+    // Save the IDBDatabase interface
+    event.target.result.createObjectStore("pos_eval", { keyPath: "fen" });
+};
 
 export class chessPosition extends ObjectEvent {
     static grades = ["Brillient","Exellent","Great","Best","Good","OK","Book","Inaccuracy","Mistake","Blunder",]
+    static eval_db = null
 
     constructor(ch,nextPositions=[],game){
         super()
@@ -33,6 +44,7 @@ export class chessPosition extends ObjectEvent {
 
         this.new_event("grade_changed")
         this.new_event("eval_changed")
+    
 
         //Remove [% ] from the comment
         if (ch.get_comment()){
@@ -72,7 +84,6 @@ export class chessPosition extends ObjectEvent {
                 this.book  =r
                 var p =(r.white + (r.draws/2))/cnt
                 this.full_eva = q(p)
-                this.short_eva = this.full_eva
                 this.book_data = r
             }
         }
@@ -146,19 +157,47 @@ export class chessPosition extends ObjectEvent {
         return c/2
     }
 
-    grade_move = () => {
-        console.log("grade")
+    analyse = (depth,en) => {
+        
+            var an = new analysis(this.fen,depth).run_p(en).then(()=>{
 
-        if (this.grade!="Book" && this.parent && this.parent.full_eva && this.parent.short_eva) {
+                for (var r of an.result)
+                {   
+                    console.log(r,this.short_eva)
+
+                    this.short_eva[parseInt(r.depth)] = r.score * (this.turn == "w" ? 1:-1)
+                    this.best_short_move[parseInt(r.depth)]=r.bestmove
+                
+                    if(!this.book)
+                        this.full_eva=r.score * (this.turn == "w" ? 1:-1)
+                    this.best_full_move=r.bestmove
+                
+                }
+                //this.throw("eval_changed")   
+                this.grade_move()
+                var nm = this.next()
+                if(nm)
+                    nm.grade_move()
+            })
+        
+    }
+
+    grade_move = () => {
+        console.log("------------------")
+        console.log("grade",this.moveA)
+
+        if (this.grade!="Book" && this.parent && this.parent.full_eva != null && this.parent.short_eva != null) {
             var count = 0;
 
                 for (var x of this.parent.best_short_move)
-                    if (x == this.moveA)
+                    if (x == this.parent.best_full_move)
                         count ++
             
 
             var difficulty = (this.parent.best_short_move.length - 1 - count*1.0 ) / (this.parent.best_short_move.length - 1)
+            this.difficulty = difficulty
 
+            console.log(this.parent.best_full_move,this.parent.best_short_move)
 
             var old_grade = this.grade
 
@@ -174,7 +213,7 @@ export class chessPosition extends ObjectEvent {
             
             //Calulate the change in eval due to the move w.r.s.t. the person making the move
             var full_eval_diff = p(this.full_eva)-p(this.parent.full_eva) 
-        
+            console.log(full_eval_diff)
             
             
             
@@ -208,16 +247,9 @@ export class chessPosition extends ObjectEvent {
             if (difficulty < 0.10) {
                 this.grade = grades_array[0] 
             }
-            if(old_grade != this.grade)
-            {
-                this.throw("grade_changed",this)
-                
-            }
-
-            console.log("------------------")
-                console.log(this.moveA)
-                console.log(difficulty)
-                console.log(full_eval_diff)
+            
+            this.throw("grade_changed",this)  
+            
         }
     }
 /*

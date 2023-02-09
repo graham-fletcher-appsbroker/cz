@@ -45,7 +45,7 @@ export class analysisBoard{
         this.game.analyse()
     }
 
-    analysis_changed = async (move) => {
+    analysis_changed = async () => {
         if (this.moves_div)
             this.game.html(this.moves_div);
 

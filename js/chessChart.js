@@ -16,6 +16,8 @@ export class chessChart {
 
         this.labels=[]
         this.values=[]
+        this.diff_w=[]
+        this.diff_b=[]
         this.game=game
         this.div=$("#"+targetDiv)
         this.updateLabelsValues()
@@ -33,6 +35,23 @@ export class chessChart {
                     labels: this.labels,
                     
                     datasets: [{
+                        data: this.diff_w,
+                        borderColor: 'rgb(255,255,255)',
+                        borderWidth:1,
+                        pointBorderColor: "rgba(0,0,0,0)",
+                        pointBackgroundColor: "rgba(0,0,0,0)",
+                        
+                        tension: 0.4
+                    },
+                    {
+                        data: this.diff_b,
+                        borderColor: 'rgb(0,0,0)',
+                        borderWidth:1,
+                        pointBorderColor: "rgba(0,0,0,0)",
+                        pointBackgroundColor: "rgba(0,0,0,0)",
+                        tension: 0.4
+                    },
+                    {
                         data: this.values,
                         fill: {
                             target: {
@@ -59,7 +78,8 @@ export class chessChart {
                             return "rgba(0,0,0,0)";
                           },
                         tension: 0.4
-                    }]
+                    },
+                    ]
                 },
                 
                 options: {
@@ -108,11 +128,27 @@ export class chessChart {
             if (pos>-1)
             {
                 this.values[pos] = p(m.full_eva)
+                if (pos % 2 > 0){
+                    if (m.difficulty > 0.03)
+                        this.diff_w[pos] = 0.5  + (m.difficulty/2)
+                    else    
+                        this.diff_w[pos] = this.diff_w[pos+1]
+                    this.diff_b[pos] = this.diff_b[pos+1]
+                }
+                else {
+                    if (m.difficulty > 0.03)
+                        this.diff_b[pos] = 0.5  - (m.difficulty/2)
+                    else
+                        this.diff_b[pos] = this.diff_b[pos+1]
+                    this.diff_w[pos] = this.diff_w[pos+1]
+                }
             }
             else
             {
                 this.labels.push(m.descriptor())
                 this.values.push(p(m.full_eva))
+                this.diff_w.push(0.5  + (m.difficulty/2))
+                this.diff_b.push(0.5  - (m.difficulty/2))
             }
         }        
 
